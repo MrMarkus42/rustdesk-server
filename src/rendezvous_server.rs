@@ -1537,12 +1537,31 @@ impl RendezvousServer {
             if !key.is_empty() {
                 key = pk;
             }
+        } else if out_sk.is_none() {
+            // A public key was given (e.g. -k "$(cat id_ed25519.pub)"). Without the matching
+            // secret key no KeyExchange is sent, and logged-in clients (>= 1.4.1) time out with
+            // "Failed to secure tcp: deadline has elapsed". Load it from id_ed25519 if it matches.
+            out_sk = Self::load_matching_sk(&key);
+            if out_sk.is_some() {
+                log::info!("Secret key for the given public key loaded from id_ed25519");
+            } else if base64::decode(&key).map(|k| k.len()) == Ok(sign::PUBLICKEYBYTES) {
+                log::warn!("No matching id_ed25519 for the given public key: logged-in clients >= 1.4.1 cannot connect (secure tcp needs the secret key)");
+            } else {
+                log::warn!("The key is not an ed25519 key pair: logged-in clients >= 1.4.1 fail with \"invalid public key from rendezvous server\". Use the generated id_ed25519 key pair instead");
+            }
         }
 
         if !key.is_empty() {
             log::info!("Key: {}", key);
         }
         Ok((key, out_sk))
+    }
+
+    fn load_matching_sk(pk: &str) -> Option<sign::SecretKey> {
+        let pk = base64::decode(pk).ok()?;
+        let contents = std::fs::read_to_string("id_ed25519").ok()?;
+        let sk = sign::SecretKey::from_slice(&base64::decode(contents.trim()).ok()?)?;
+        (sk.public_key().as_ref() == &pk[..]).then_some(sk)
     }
 
     #[inline]
