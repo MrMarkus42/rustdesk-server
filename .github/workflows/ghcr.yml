@@ -51,7 +51,7 @@ jobs:
           
       - uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: ${{ matrix.job.os }}
+          key: ${{ matrix.job.target }} # per target: cross images differ in glibc, build scripts must not be shared
 
       - name: Build
         uses: actions-rs/cargo@v1
