@@ -172,40 +172,27 @@ jobs:
 
       # Create and push manifest for :ve.rs.ion tag
       - name: Create and push manifest (:ve.rs.ion)
-        uses: Noelware/docker-manifest-action@master
-        if: github.event_name != 'workflow_dispatch'
-        with:
-          tags: ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-armv7,
-#            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-i386
-          push: true
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }} \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-armv7
 
       # Create and push manifest for :major tag
       - name: Create and push manifest (:major)
-        uses: Noelware/docker-manifest-action@master
-        with:
-          tags: ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-armv7,
-#            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-i386
-          push: true
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }} \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-armv7
 
       # Create and push manifest for :latest tag
       - name: Create and push manifest (:latest)
-        uses: Noelware/docker-manifest-action@master
-        with:
-          tags: ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-armv7,
-#            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-i386
-          push: true
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }} \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-armv7
 
   # Build and push single-arch Docker images to ghcr.io
   create-classic-images:
@@ -303,37 +290,27 @@ jobs:
 
       # Create and push manifest for :ve.rs.ion tag
       - name: Create and push manifest (:ve.rs.ion)
-        uses: Noelware/docker-manifest-action@master
-        if: github.event_name != 'workflow_dispatch'
-        with:
-          tags: ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-armv7,
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }} \
+            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-armv7 \
             ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-i386
-          push: true
 
       # Create and push manifest for :major tag
       - name: Create and push manifest (:major)
-        uses: Noelware/docker-manifest-action@master
-        with:
-          tags: ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-armv7,
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }} \
+            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-armv7 \
             ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-i386
-          push: true
 
       # Create and push manifest for :latest tag
       - name: Create and push manifest (:latest)
-        uses: Noelware/docker-manifest-action@master
-        with:
-          tags: ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}
-          inputs: |
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-amd64,
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-arm64v8,
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-armv7,
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }} \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-amd64 \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-armv7 \
             ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-i386
-          push: true
