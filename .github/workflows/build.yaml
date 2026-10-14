@@ -8,13 +8,9 @@ name: build
 # DOCKER_PASSWORD is a token you should create under "account settings / security" with read/write access
 
 on:
+  # Docker Hub build of the original; this fork publishes via ghcr.yml only
   workflow_dispatch:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-[0-9]+'
+
 
 env:
   CARGO_TERM_COLOR: always
