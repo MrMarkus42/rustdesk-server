@@ -668,13 +668,23 @@ impl RendezvousServer {
                     }
                     log::trace!("KeyExchange their_pk: {:?}", hex::encode(&ex.keys[0]));
                     log::trace!("KeyExchange box: {:?}", hex::encode(&ex.keys[1]));
-                    let their_pk: [u8; 32] = ex.keys[0].to_vec().try_into().unwrap();
-                    let cryptobox: [u8; 48] = ex.keys[1].to_vec().try_into().unwrap();
-                    let symetric_key = get_symetric_key_from_msg(
+                    let (Ok(their_pk), Ok(cryptobox)) = (
+                        <[u8; 32]>::try_from(&ex.keys[0][..]),
+                        <[u8; 48]>::try_from(&ex.keys[1][..]),
+                    ) else {
+                        log::error!("Handshake failed: invalid key lengths in key exchange from {}", addr);
+                        return false;
+                    };
+                    // A client with a stale server key, or a crafted message, must only drop
+                    // this connection: release builds use panic=abort.
+                    let Some(symetric_key) = get_symetric_key_from_msg(
                         self.inner.secure_tcp_sk_b.0,
                         their_pk,
                         &cryptobox,
-                    );
+                    ) else {
+                        log::error!("Handshake failed: cannot open the sealed key from {}", addr);
+                        return false;
+                    };
                     log::debug!("KeyExchange symetric key: {:?}", hex::encode(&symetric_key));
                     let key = secretbox::Key::from_slice(&symetric_key);
                     match key {
@@ -1718,7 +1728,7 @@ fn get_symetric_key_from_msg(
     our_sk_b: [u8; 32],
     their_pk_b: [u8; 32],
     sealed_value: &[u8; 48],
-) -> [u8; 32] {
+) -> Option<[u8; 32]> {
     let their_pk_b = box_::PublicKey(their_pk_b);
     let nonce = box_::Nonce([0u8; box_::NONCEBYTES]);
     let sk = box_::SecretKey(our_sk_b);
@@ -1727,9 +1737,9 @@ fn get_symetric_key_from_msg(
         Ok(key) => {
             let mut key_array = [0u8; 32];
             key_array.copy_from_slice(&key);
-            key_array
+            Some(key_array)
         }
-        Err(e) => panic!("Error while opening the seal key{:?}", e),
+        Err(_) => None,
     }
 }
 
@@ -1742,6 +1752,13 @@ mod tests {
         let bind_addr = IpAddr::V4(Ipv4Addr::LOCALHOST);
         let socket = create_udp_listener(Some(bind_addr), 0, 0).await.unwrap();
         assert_eq!(socket.local_addr().unwrap().ip(), bind_addr);
+    }
+
+    #[test]
+    fn bad_sealed_key_is_rejected_without_panic() {
+        let (_, sk) = box_::gen_keypair();
+        let (their_pk, _) = box_::gen_keypair();
+        assert!(get_symetric_key_from_msg(sk.0, their_pk.0, &[0u8; 48]).is_none());
     }
 
     #[hbb_common::tokio::test]
