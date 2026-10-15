@@ -427,6 +427,12 @@ pub async fn listen_signal() -> Result<()> {
 
 pub fn check_software_update() {
     const ONE_DAY_IN_SECONDS: u64 = 60 * 60 * 24;
+    // The daily check sends OS, version, arch and a device fingerprint to api.rustdesk.com;
+    // UPDATE_CHECK=N (or --update-check=N) turns it off.
+    if get_arg("update-check").eq_ignore_ascii_case("n") {
+        log::info!("Update check disabled");
+        return;
+    }
     std::thread::spawn(move || loop {
         std::thread::spawn(move || allow_err!(check_software_update_()));
         std::thread::sleep(std::time::Duration::from_secs(ONE_DAY_IN_SECONDS));

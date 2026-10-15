@@ -24,7 +24,8 @@ fn main() -> ResultType<()> {
         -M, --rmem=[NUMBER(default={RMEM})] 'Sets UDP recv buffer size, set system rmem_max first, e.g., sudo sysctl -w net.core.rmem_max=52428800. vi /etc/sysctl.conf, net.core.rmem_max=52428800, sudo sysctl –p'
         , --mask=[MASK] '[DEPRECATED] Determine if the connection comes from LAN, e.g. 192.168.0.0/16'
         -k, --key=[KEY] 'Only allow the client with the same key'
-        , --must-login=[Y|N] 'Only allow the client with login'",
+        , --must-login=[Y|N] 'Only allow the client with login'
+        , --update-check=[Y|N] 'Daily update check against api.rustdesk.com (default: Y)'",
     );
     init_args(&args, "hbbs", "RustDesk ID/Rendezvous Server");
     let port = get_arg_or("port", RENDEZVOUS_PORT.to_string()).parse::<i32>()?;
