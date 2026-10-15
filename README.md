@@ -1,3 +1,5 @@
+**Deutsch** · [English](README.en.md)
+
 # RustDesk Server mit API (s6-Image)
 
 Selbst gehosteter [RustDesk](https://rustdesk.com)-Server (ID-Server **hbbs** und Relay **hbbr**) zusammen mit der [RustDesk-API](https://github.com/MrMarkus42/rustdesk-api) und deren Admin-Oberfläche in **einem** Docker-Container.
@@ -32,7 +34,7 @@ Architekturen: `amd64`, `arm64`, `armv7`. Für den Produktivbetrieb eine feste V
 ```yaml
 services:
   rustdesk:
-    image: ghcr.io/mrmarkus42/rustdesk-server-s6:1.1.17-2
+    image: ghcr.io/mrmarkus42/rustdesk-server-s6:<version>
     network_mode: host            # oder Ports 21114–21119 (21116 auch UDP) freigeben
     environment:
       - TZ=Europe/Berlin
@@ -43,7 +45,6 @@ services:
       - RUSTDESK_API_RUSTDESK_RELAY_SERVER=rustdesk.example.org
       - RUSTDESK_API_RUSTDESK_API_SERVER=https://rustdesk.example.org
       - RUSTDESK_API_JWT_KEY=<langer zufälliger Wert>
-      - RUSTDESK_API_APP_WEB_CLIENT=0
     volumes:
       - ./data/server:/data       # Server-Schlüssel und Geräte-DB, unbedingt persistent!
       - ./data/api:/app/data      # API-Datenbank
@@ -60,7 +61,6 @@ Das initiale Admin-Passwort steht beim ersten Start im Log. Die Admin-Oberfläch
 | `ENCRYPTED_ONLY=1` | Nur verschlüsselte Verbindungen, nutzt das Schlüsselpaar aus `/data` |
 | `MUST_LOGIN=Y` | Verbindungen nur mit angemeldetem Client |
 | `RUSTDESK_API_JWT_KEY` | Signatur der Login-Tokens. **Nach der Einrichtung nicht mehr ändern**, sonst müssen sich alle Clients neu anmelden |
-| `RUSTDESK_API_APP_WEB_CLIENT=0` | Web-Client abschalten |
 | `RUSTDESK_API_GIN_TRUST_PROXY` | Adresse/Bereich des Reverse Proxys, damit die API die echten Client-IPs sieht (z. B. `172.16.0.0/12` für einen Proxy in Docker) |
 | `RUSTDESK_API_APP_BAN_THRESHOLD=10` | IP-Sperre nach Fehlversuchen. **Nur zusammen mit korrektem `TRUST_PROXY`** |
 | `UPDATE_CHECK=N` | Keine tägliche Update-Abfrage an api.rustdesk.com |
@@ -76,7 +76,7 @@ Alle weiteren Server-Parameter: [docs/environment-variables.md](docs/environment
 ## Herkunft und Lizenz
 
 - Offizieller Server: [rustdesk/rustdesk-server](https://github.com/rustdesk/rustdesk-server)
-- API-Erweiterungen: [lejianwen/rustdesk-server](https://github.com/lejianwen/rustdesk-server) ([ursprüngliche Beschreibung](README-lejianwen.md))
+- API-Erweiterungen: [lejianwen/rustdesk-server](https://github.com/lejianwen/rustdesk-server) ([ursprüngliche Beschreibung, Chinesisch](README-lejianwen.md))
 - Lizenz: [AGPL-3.0](LICENSE)
 
-Weitere Sprachen der ursprünglichen Server-Dokumentation: [English](README-EN.md) · [Nederlands](README-NL.md) · [繁體中文](README-TW.md) · [Deutsch (alt)](README-DE.md)
+Ursprüngliche Server-Dokumentation: [English](README-EN.md) · [Deutsch](README-DE.md) · [Nederlands](README-NL.md) · [繁體中文](README-TW.md)
