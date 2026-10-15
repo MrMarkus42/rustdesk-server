@@ -2,6 +2,11 @@ name: Build and publish to ghcr.io
 
 on:
   workflow_dispatch:
+    inputs:
+      api_image:
+        description: 'API image the s6 image builds on (e.g. ghcr.io/mrmarkus42/rustdesk-api:v2.7.4-rc1)'
+        required: false
+        default: 'ghcr.io/mrmarkus42/rustdesk-api:latest'
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -14,7 +19,7 @@ env:
   LATEST_TAG: latest
   # GHCR needs lowercase names; github.repository keeps the owner's case (MrMarkus42)
   IMAGE_REPO: ghcr.io/mrmarkus42/rustdesk-server
-  API_IMAGE: ghcr.io/mrmarkus42/rustdesk-api:latest
+  API_IMAGE: ${{ github.event.inputs.api_image || 'ghcr.io/mrmarkus42/rustdesk-api:latest' }}
 
 permissions:
   contents: read
@@ -128,8 +133,22 @@ jobs:
         run: |
           T=${GITHUB_REF#refs/*/}
           M=${T%%.*}
+          # Test builds (tags with -rc, e.g. 1.1.17-4-rc1) never move :latest or the major tag
+          L=${{ env.LATEST_TAG }}
+          if [[ "$T" == *-rc* ]]; then
+            M=$T
+            L=$T
+          fi
+          echo "LATEST_T=$L" >> $GITHUB_ENV
           echo "GIT_TAG=$T" >> $GITHUB_ENV
           echo "MAJOR_TAG=$M" >> $GITHUB_ENV
+
+      - name: Check API image
+        run: |
+          case "${{ env.API_IMAGE }}" in
+            ghcr.io/mrmarkus42/rustdesk-api:*) ;;
+            *) echo "API image must be ghcr.io/mrmarkus42/rustdesk-api:<tag>"; exit 1 ;;
+          esac
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -142,7 +161,7 @@ jobs:
             S6_ARCH=${{ matrix.job.s6_platform }}
             API_IMAGE=${{ env.API_IMAGE }}
           tags: |
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-${{ matrix.job.name }}
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_T }}-${{ matrix.job.name }}
             ${{ env.IMAGE_REPO }}-s6:${{ env.GIT_TAG }}-${{ matrix.job.name }}
             ${{ env.IMAGE_REPO }}-s6:${{ env.MAJOR_TAG }}-${{ matrix.job.name }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -167,6 +186,13 @@ jobs:
         run: |
           T=${GITHUB_REF#refs/*/}
           M=${T%%.*}
+          # Test builds (tags with -rc, e.g. 1.1.17-4-rc1) never move :latest or the major tag
+          L=${{ env.LATEST_TAG }}
+          if [[ "$T" == *-rc* ]]; then
+            M=$T
+            L=$T
+          fi
+          echo "LATEST_T=$L" >> $GITHUB_ENV
           echo "GIT_TAG=$T" >> $GITHUB_ENV
           echo "MAJOR_TAG=$M" >> $GITHUB_ENV
 
@@ -189,10 +215,10 @@ jobs:
       # Create and push manifest for :latest tag
       - name: Create and push manifest (:latest)
         run: |
-          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }} \
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-amd64 \
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-arm64v8 \
-            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_TAG }}-armv7
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_T }} \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_T }}-amd64 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_T }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}-s6:${{ env.LATEST_T }}-armv7
 
   # Build and push single-arch Docker images to ghcr.io
   create-classic-images:
@@ -249,6 +275,13 @@ jobs:
         run: |
           T=${GITHUB_REF#refs/*/}
           M=${T%%.*}
+          # Test builds (tags with -rc, e.g. 1.1.17-4-rc1) never move :latest or the major tag
+          L=${{ env.LATEST_TAG }}
+          if [[ "$T" == *-rc* ]]; then
+            M=$T
+            L=$T
+          fi
+          echo "LATEST_T=$L" >> $GITHUB_ENV
           echo "GIT_TAG=$T" >> $GITHUB_ENV
           echo "MAJOR_TAG=$M" >> $GITHUB_ENV
 
@@ -260,7 +293,7 @@ jobs:
           push: true
           provenance: false
           tags: |
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-${{ matrix.job.name }}
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }}-${{ matrix.job.name }}
             ${{ env.IMAGE_REPO }}:${{ env.GIT_TAG }}-${{ matrix.job.name }}
             ${{ env.IMAGE_REPO }}:${{ env.MAJOR_TAG }}-${{ matrix.job.name }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -285,6 +318,13 @@ jobs:
         run: |
           T=${GITHUB_REF#refs/*/}
           M=${T%%.*}
+          # Test builds (tags with -rc, e.g. 1.1.17-4-rc1) never move :latest or the major tag
+          L=${{ env.LATEST_TAG }}
+          if [[ "$T" == *-rc* ]]; then
+            M=$T
+            L=$T
+          fi
+          echo "LATEST_T=$L" >> $GITHUB_ENV
           echo "GIT_TAG=$T" >> $GITHUB_ENV
           echo "MAJOR_TAG=$M" >> $GITHUB_ENV
 
@@ -309,8 +349,8 @@ jobs:
       # Create and push manifest for :latest tag
       - name: Create and push manifest (:latest)
         run: |
-          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }} \
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-amd64 \
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-arm64v8 \
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-armv7 \
-            ${{ env.IMAGE_REPO }}:${{ env.LATEST_TAG }}-i386
+          docker buildx imagetools create -t ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }} \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }}-amd64 \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }}-arm64v8 \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }}-armv7 \
+            ${{ env.IMAGE_REPO }}:${{ env.LATEST_T }}-i386
