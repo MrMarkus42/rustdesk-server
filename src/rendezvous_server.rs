@@ -104,6 +104,8 @@ type RelayServers = Vec<String>;
 const CHECK_RELAY_TIMEOUT: u64 = 3_000;
 static ALWAYS_USE_RELAY: AtomicBool = AtomicBool::new(false);
 static MUST_LOGIN: AtomicBool = AtomicBool::new(false);
+// Longer than a client's 90 s keep-alive limit, see handle_listener_inner.
+const REGISTERED_WS_IDLE_TIMEOUT: u64 = 120_000;
 const MAX_RELAY_UUID_LEN: usize = 128;
 
 // The peer sends this uuid to whatever relay_server names, so keep control bytes out of it.
@@ -1533,11 +1535,18 @@ impl RendezvousServer {
                 sink: a,
                 encrypt: None,
             }));
-            while let Ok(Some(Ok(msg))) = timeout(30_000, b.next()).await {
+            let mut idle_timeout = 30_000;
+            while let Ok(Some(Ok(msg))) = timeout(idle_timeout, b.next()).await {
                 if let tungstenite::Message::Binary(bytes) = msg {
                     if !self.handle_tcp(&bytes, &mut sink, addr, key, ws).await {
                         break;
                     }
+                }
+                // After RegisterPk the device only waits here for punch holes and sends nothing.
+                // RustDesk clients reconnect after 90 s without a message (keep_alive * 1.5), so
+                // leave the closing to them, as before, instead of dropping the device after 30 s.
+                if sink.is_none() && self.ws_map.lock().await.contains_key(&try_into_v4(addr)) {
+                    idle_timeout = REGISTERED_WS_IDLE_TIMEOUT;
                 }
             }
         } else {
@@ -1569,6 +1578,12 @@ impl RendezvousServer {
         }
         if sink.is_none() {
             self.tcp_punch.lock().await.remove(&try_into_v4(addr));
+            // A WebSocket RegisterPk parks its sink in ws_map; drop it with the connection,
+            // otherwise every re-registration keeps a closed socket open forever.
+            // (addr carries the connection's own port, also behind a proxy, see #725.)
+            if ws {
+                self.ws_map.lock().await.remove(&try_into_v4(addr));
+            }
         }
         log::debug!("Tcp connection from {:?} closed", addr);
         Ok(())
