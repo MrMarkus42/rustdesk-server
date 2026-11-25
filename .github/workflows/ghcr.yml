@@ -7,12 +7,9 @@ on:
         description: 'API image the s6 image builds on (e.g. ghcr.io/mrmarkus42/rustdesk-api:v2.7.4-rc1)'
         required: false
         default: 'ghcr.io/mrmarkus42/rustdesk-api:latest'
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-[0-9]+'
+  # No push trigger: a tag push started a second run that always took
+  # rustdesk-api:latest. Start it by hand with the API image of the release:
+  # gh workflow run ghcr.yml --ref <tag> -f api_image=ghcr.io/mrmarkus42/rustdesk-api:<tag>
 
 env:
   CARGO_TERM_COLOR: always
